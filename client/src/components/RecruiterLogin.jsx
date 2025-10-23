@@ -6,75 +6,75 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
 const RecruiterLogin = () => {
-  const navigate = useNavigate()
-  const [state, setState] = useState('Login'); // 'Login' or 'Sign Up'
+  const navigate = useNavigate();
+  const [state, setState] = useState('Login');
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
-
   const [image, setImage] = useState(null);
   const [isTextDataSubmited, setIsDataSubmited] = useState(false);
 
-  const { setShowRecruiterLogin, backendUrl , setCompanyToken , setCompanyData} = useContext(AppContext);
+  const { setShowRecruiterLogin, backendUrl, setCompanyToken, setCompanyData } = useContext(AppContext);
 
   const onSubmitHandler = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (state === 'Sign Up' && !isTextDataSubmited) {
-      // Proceed to the upload image stage
-      return setIsDataSubmited(true);
-    } 
-    try {
-      if(state === "Login"){
-        const {data} = await axios.post(backendUrl + '/api/company/login',{email ,password})
-
-        if(data.success){
-          
-          setCompanyData(data.company)
-          setCompanyToken(data.token)
-          localStorage.setItem('companyToken',data.token)
-          setShowRecruiterLogin(false)
-          navigate('/dashboard')
-        }
-        else{
-          toast.error(data.message)
-        }
-      }
-      else{
-        const formData = new FormData()
-        formData.append('name',name)
-        formData.append('password',password)
-        formData.append('email',email)
-        formData.append('image',image)
-
-        const {data} = await axios.post(backendUrl+'/api/company/register',formData)
-
-        if(data.success){
-           
-          setCompanyData(data.company)
-          setCompanyToken(data.token)
-          localStorage.setItem('companyToken',data.token)
-          setShowRecruiterLogin(false)
-          navigate('/dashboard')
-        }
-        else{
-          toast.error(data.message)
-        }
-      }
-    } catch (error) {
-      toast.error(error.message)
+  // If Sign Up and haven't submitted text data yet, move to image upload step
+  if (state === 'Sign Up' && !isTextDataSubmited) {
+    // Validate text fields before moving to image upload
+    if (!name || !email || !password) {
+      toast.error('Please fill in all fields');
+      return;
     }
-    // else if (state === 'Sign Up' && isTextDataSubmited) {
-    //   // Submit all data
-    //   console.log({
-    //     name,
-    //     email,
-    //     password,
-    //     image,
-    //   });
-    // }
-  };
+    return setIsDataSubmited(true);
+  }
 
+  try {
+    if (state === "Login") {
+      const { data } = await axios.post(backendUrl + '/api/company/login', { email, password });
+
+      if (data.success) {
+        setCompanyData(data.company);
+        setCompanyToken(data.token);
+        localStorage.setItem('companyToken', data.token);
+        setShowRecruiterLogin(false);
+        navigate('/dashboard');
+        toast.success('Login successful!');
+      } else {
+        toast.error(data.message);
+      }
+    } else {
+      // Sign Up - Check if image is uploaded
+      if (!image) {
+        toast.error('Please upload your company logo');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('name', name);
+      formData.append('password', password);
+      formData.append('email', email);
+      formData.append('image', image);
+
+      console.log('📤 Registering company:', name);
+      const { data } = await axios.post(backendUrl + '/api/company/register', formData);
+
+      if (data.success) {
+        setCompanyData(data.company);
+        setCompanyToken(data.token);
+        localStorage.setItem('companyToken', data.token);
+        setShowRecruiterLogin(false);
+        navigate('/dashboard');
+        toast.success('Account created successfully!');
+      } else {
+        toast.error(data.message);
+      }
+    }
+  } catch (error) {
+    console.error('❌ Error:', error);
+    toast.error(error.response?.data?.message || error.message);
+  }
+};
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => {
@@ -83,127 +83,181 @@ const RecruiterLogin = () => {
   }, []);
 
   return (
-    <div className="absolute top-0 left-0 right-0 bottom-0 z-10 backdrop-blur-sm bg-black/30 flex justify-center items-center">
-      <div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="relative w-full max-w-md animate-in fade-in zoom-in duration-300">
         <form
           onSubmit={onSubmitHandler}
-          className="relative bg-white p-10 rounded-xl text-slate-500"
+          className="bg-white rounded-3xl shadow-2xl overflow-hidden"
         >
-          <h1 className="text-center text-2xl text-neutral-700 font-medium">
-            Recruiter {state}
-          </h1>
-
-          {state === 'Sign Up' && isTextDataSubmited ? (
-            <div className="flex items-center gap-4 my-10">
-              <label className="w-16 rounded-full" htmlFor="image">
-                <img
-                  className="w-16"
-                  src={image ? URL.createObjectURL(image) : assets.upload_area}
-                  alt="Upload Area"
-                />
-                <input
-                  onChange={(e) => setImage(e.target.files[0])}
-                  type="file"
-                  hidden
-                  id="image"
-                />
-              </label>
-              <p>
-                Upload Company <br /> Logo{' '}
+          {/* Header */}
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-6 text-white relative overflow-hidden">
+            <div className="absolute inset-0 bg-white/10"></div>
+            <div className="relative z-10">
+              <h1 className="text-2xl font-bold mb-1">
+                Recruiter {state}
+              </h1>
+              <p className="text-blue-100 text-sm">
+                {state === 'Sign Up' 
+                  ? 'Create your company account' 
+                  : 'Welcome back! Please login'}
               </p>
             </div>
-          ) : (
-            <>
-              <p className="text-sm">
-                {state === 'Sign Up'
-                  ? 'Create an account to get started!'
-                  : ''}
-              </p>
+            <button
+              type="button"
+              onClick={() => setShowRecruiterLogin(false)}
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+            >
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
 
-              {state !== 'Login' && (
-                <div className="border px-4 py-2 flex items-center gap-2 rounded-full mt-5">
-                  <img src={assets.person_icon} alt="Person Icon" />
+          <div className="px-8 py-8">
+            {state === 'Sign Up' && isTextDataSubmited ? (
+              /* Upload Logo Step */
+              <div className="text-center">
+                <p className="text-gray-600 mb-6">Upload your company logo</p>
+                <label className="cursor-pointer inline-block" htmlFor="image">
+                  <div className="w-32 h-32 mx-auto mb-4 rounded-2xl border-4 border-dashed border-gray-300 hover:border-blue-500 transition-colors overflow-hidden bg-gray-50 flex items-center justify-center">
+                    {image ? (
+                      <img
+                        className="w-full h-full object-cover"
+                        src={URL.createObjectURL(image)}
+                        alt="Company Logo"
+                      />
+                    ) : (
+                      <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                    )}
+                  </div>
                   <input
-                    className="outline-none text-sm"
-                    onChange={(e) => setName(e.target.value)}
-                    value={name}
-                    type="text"
-                    placeholder="Company Name"
+                    onChange={(e) => setImage(e.target.files[0])}
+                    type="file"
+                    hidden
+                    id="image"
+                    accept="image/*"
+                  />
+                </label>
+                <p className="text-sm text-gray-500">Click to upload company logo</p>
+              </div>
+            ) : (
+              /* Form Fields */
+              <div className="space-y-4">
+                {state === 'Sign Up' && (
+                  <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2">
+                      <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                    </div>
+                    <input
+                      className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                      onChange={(e) => setName(e.target.value)}
+                      value={name}
+                      type="text"
+                      placeholder="Company Name"
+                      required
+                    />
+                  </div>
+                )}
+
+                <div className="relative">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2">
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <input
+                    className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                    onChange={(e) => setEmail(e.target.value)}
+                    value={email}
+                    type="email"
+                    placeholder="Email Address"
                     required
                   />
                 </div>
+
+                <div className="relative">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2">
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                  </div>
+                  <input
+                    className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                    onChange={(e) => setPassword(e.target.value)}
+                    value={password}
+                    type="password"
+                    placeholder="Password"
+                    required
+                  />
+                </div>
+              </div>
+            )}
+
+            {state === 'Login' && (
+              <button
+                type="button"
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium mt-2"
+              >
+                Forgot password?
+              </button>
+            )}
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              className="w-full mt-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
+            >
+              {state === 'Login'
+                ? 'Login to Dashboard'
+                : isTextDataSubmited
+                ? 'Create Account'
+                : 'Continue'}
+            </button>
+
+            {/* Toggle State */}
+            <div className="mt-6 text-center">
+              {state === 'Login' ? (
+                <p className="text-gray-600 text-sm">
+                  Don't have an account?{' '}
+                  <button
+                    type="button"
+                    className="text-blue-600 hover:text-blue-700 font-semibold"
+                    onClick={() => {
+                      setState('Sign Up');
+                      setIsDataSubmited(false);
+                    }}
+                  >
+                    Sign Up
+                  </button>
+                </p>
+              ) : (
+                <p className="text-gray-600 text-sm">
+                  Already have an account?{' '}
+                  <button
+                    type="button"
+                    className="text-blue-600 hover:text-blue-700 font-semibold"
+                    onClick={() => {
+                      setState('Login');
+                      setIsDataSubmited(false);
+                    }}
+                  >
+                    Login
+                  </button>
+                </p>
               )}
+            </div>
+          </div>
 
-              <div className="border px-4 py-2 flex items-center gap-2 rounded-full mt-5">
-                <img src={assets.email_icon} alt="Email Icon" />
-                <input
-                  className="outline-none text-sm"
-                  onChange={(e) => setEmail(e.target.value)}
-                  value={email}
-                  type="email"
-                  placeholder="Email ID"
-                  required
-                />
-              </div>
-
-              <div className="border px-4 py-2 flex items-center gap-2 rounded-full mt-5">
-                <img src={assets.lock_icon} alt="Lock Icon" />
-                <input
-                  className="outline-none text-sm"
-                  onChange={(e) => setPassword(e.target.value)}
-                  value={password}
-                  type="password"
-                  placeholder="Password"
-                  required
-                />
-              </div>
-            </>
-          )}
-
-          {state === 'Login' && (
-            <p className="text-sm text-blue-600 mt-4 cursor-pointer">
-              Forget password
+          {/* Footer Note */}
+          <div className="bg-gray-50 px-8 py-4 border-t border-gray-200">
+            <p className="text-xs text-gray-500 text-center">
+              By continuing, you agree to Hyrify's Terms of Service and Privacy Policy
             </p>
-          )}
-
-          <button
-            type="submit"
-            className="bg-blue-600 w-full text-white py-2 rounded-full mt-4"
-          >
-            {state === 'Login'
-              ? 'Login'
-              : isTextDataSubmited
-              ? 'Create Account'
-              : 'Next'}
-          </button>
-
-          {state === 'Login' ? (
-            <p className="mt-5 text-center">
-              Don&apos;t have an account?{' '}
-              <span
-                className="text-blue-600 cursor-pointer"
-                onClick={() => setState('Sign Up')}
-              >
-                Sign Up
-              </span>
-            </p>
-          ) : (
-            <p className="mt-5 text-center">
-              Already have an account?{' '}
-              <span
-                className="text-blue-600 cursor-pointer"
-                onClick={() => setState('Login')}
-              >
-                Login
-              </span>
-            </p>
-          )}
-          <img
-            className="absolute top-5 right-5 cursor-pointer"
-            onClick={() => setShowRecruiterLogin(false)}
-            src={assets.cross_icon}
-            alt="Close"
-          />
+          </div>
         </form>
       </div>
     </div>

@@ -1,11 +1,10 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import Quill from 'quill';
-import 'quill/dist/quill.snow.css'; // Import Quill styles
+import 'quill/dist/quill.snow.css';
 import { JobCategories, JobLocations } from '../assets/assets';
 import axios from 'axios';
 import { AppContext } from '../context/AppContext';
 import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 
 const AddJob = () => {
   const [title, setTitle] = useState('');
@@ -46,101 +45,174 @@ const AddJob = () => {
 
   useEffect(() => {
     if (!quillRef.current && editorRef.current) {
-      const quillInstance = new Quill(editorRef.current, { theme: 'snow' });
+      const quillInstance = new Quill(editorRef.current, { 
+        theme: 'snow',
+        modules: {
+          toolbar: [
+            [{ 'header': [1, 2, 3, false] }],
+            ['bold', 'italic', 'underline'],
+            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+            ['link'],
+            ['clean']
+          ]
+        }
+      });
       quillRef.current = quillInstance;
     }
   }, []);
 
   return (
-    <div>
-      <form
-        onSubmit={onSubmitHandler}
-        className="container p-4 flex flex-col w-full items-start gap-3"
-      >
-        <div className="w-full">
-          <p className="mb-2">Job Title</p>
+    <div className="max-w-5xl mx-auto">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Post a New Job</h1>
+        <p className="text-gray-600">Fill in the details to create a new job posting</p>
+      </div>
+
+      <form onSubmit={onSubmitHandler} className="bg-white rounded-2xl shadow-lg p-8">
+        {/* Job Title */}
+        <div className="mb-6">
+          <label className="flex items-center gap-2 text-gray-700 font-semibold mb-3">
+            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            Job Title
+          </label>
           <input
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Type here"
+            placeholder="e.g. Senior Frontend Developer"
             type="text"
             value={title}
             required
-            className="w-full max-w-lg px-3 py-2 border-2 border-gray-300 rounded"
+            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
           />
         </div>
 
-        <div className="w-full max-w-lg">
-          <p className="my-2">Job Description</p>
-          <div ref={editorRef} className="border-2 border-gray-300 rounded p-2 min-h-[150px]"></div>
+        {/* Job Description */}
+        <div className="mb-6">
+          <label className="flex items-center gap-2 text-gray-700 font-semibold mb-3">
+            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+            </svg>
+            Job Description
+          </label>
+          <div 
+            ref={editorRef} 
+            className="border-2 border-gray-200 rounded-xl min-h-[250px] focus-within:border-blue-500 transition-all"
+          ></div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:gap-8">
+        {/* Job Details Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {/* Category */}
           <div>
-            <p className="mb-2">Job Category</p>
-            <select
-              className="w-full px-3 py-2 border-2 border-gray-300 rounded"
-              onChange={(e) => setCategory(e.target.value)}
-              value={category}
-            >
-              {JobCategories.map((category, index) => (
-                <option key={index} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
+            <label className="text-gray-700 font-semibold mb-3 block">
+              Category
+            </label>
+            <div className="relative">
+              <select
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all appearance-none bg-white"
+                onChange={(e) => setCategory(e.target.value)}
+                value={category}
+              >
+                {JobCategories.map((category, index) => (
+                  <option key={index} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+              <svg className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
           </div>
 
+          {/* Location */}
           <div>
-            <p className="mb-2">Job Location</p>
-            <select
-              className="w-full px-3 py-2 border-2 border-gray-300 rounded"
-              onChange={(e) => setLocation(e.target.value)}
-              value={location}
-            >
-              {JobLocations.map((location, index) => (
-                <option key={index} value={location}>
-                  {location}
-                </option>
-              ))}
-            </select>
+            <label className="text-gray-700 font-semibold mb-3 block">
+              Location
+            </label>
+            <div className="relative">
+              <select
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all appearance-none bg-white"
+                onChange={(e) => setLocation(e.target.value)}
+                value={location}
+              >
+                {JobLocations.map((location, index) => (
+                  <option key={index} value={location}>
+                    {location}
+                  </option>
+                ))}
+              </select>
+              <svg className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
           </div>
 
+          {/* Level */}
           <div>
-            <p className="mb-2">Job Level</p>
-            <select
-              className="w-full px-3 py-2 border-2 border-gray-300 rounded"
-              onChange={(e) => setLevel(e.target.value)}
-              value={level}
-            >
-              <option value="Beginner level">Beginner level</option>
-              <option value="Intermediate level">Intermediate level</option>
-              <option value="Senior level">Senior level</option>
-            </select>
+            <label className="text-gray-700 font-semibold mb-3 block">
+              Experience Level
+            </label>
+            <div className="relative">
+              <select
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all appearance-none bg-white"
+                onChange={(e) => setLevel(e.target.value)}
+                value={level}
+              >
+                <option value="Beginner level">Beginner</option>
+                <option value="Intermediate level">Intermediate</option>
+                <option value="Senior level">Senior</option>
+              </select>
+              <svg className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
           </div>
 
+          {/* Salary */}
           <div>
-            <p className="mb-2">Job Salary</p>
+            <label className="text-gray-700 font-semibold mb-3 block">
+              Salary (₹/year)
+            </label>
             <input
               min={0}
-              className="w-full px-3 py-2 border-2 border-gray-300 rounded sm:w-[120px]"
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
               onChange={(e) => setSalary(Number(e.target.value))}
               type="number"
-              placeholder="25000"
+              placeholder="500000"
               value={salary}
             />
           </div>
         </div>
 
-        <button
-          type="submit"
-          className="w-28 py-3 mt-4 bg-black text-white rounded self-start"
-        >
-          ADD
-        </button>
+        {/* Action Buttons */}
+        <div className="flex gap-4 pt-6 border-t border-gray-200">
+          <button
+            type="submit"
+            className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold px-8 py-3 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Post Job
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setTitle('');
+              setSalary(0);
+              if (quillRef.current) quillRef.current.root.innerHTML = '';
+            }}
+            className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold px-8 py-3 rounded-xl transition-all"
+          >
+            Clear Form
+          </button>
+        </div>
       </form>
     </div>
   );
 };
 
 export default AddJob;
- 
