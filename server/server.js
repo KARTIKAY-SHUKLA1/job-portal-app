@@ -16,15 +16,28 @@ const app = express()
 
 // Connect to database
 await connectDB()
-// Add this for debugging
-console.log('🔍 Environment Check:');
-console.log('MongoDB URI:', process.env.MONGODB_URI ? 'Present ✓' : 'Missing ✗');
-console.log('Cloudinary Name:', process.env.CLOUDINARY_NAME || 'Missing');
-console.log('Cloudinary API Key:', process.env.CLOUDINARY_API_KEY ? 'Present ✓' : 'Missing ✗');
 await connectCloudinary()
 
+// CORS configuration - Allow all Vercel deployments
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or Postman)
+    if (!origin) return callback(null, true);
+    
+    // Allow all Vercel preview and production deployments
+    if (origin.includes('vercel.app') || origin.includes('localhost')) {
+      return callback(null, true);
+    }
+    
+    // Allow other origins as needed
+    callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'token']
+}));
+
 // Middlewares
-app.use(cors())
 app.use(express.json())
 app.use(clerkMiddleware())
 
@@ -37,7 +50,6 @@ app.post('/webhooks',clerkWebhooks)
 app.use('/api/company',companyRoutes)
 app.use('/api/jobs',jobRoutes)
 app.use('/api/users',userRoutes)
-
 
 // Port
 const PORT = process.env.PORT || 5000
