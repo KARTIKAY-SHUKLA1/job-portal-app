@@ -16,6 +16,11 @@ const app = express()
 
 // Connect to database
 await connectDB()
+// Add this for debugging
+console.log('🔍 Environment Check:');
+console.log('MongoDB URI:', process.env.MONGODB_URI ? 'Present ✓' : 'Missing ✗');
+console.log('Cloudinary Name:', process.env.CLOUDINARY_NAME || 'Missing');
+console.log('Cloudinary API Key:', process.env.CLOUDINARY_API_KEY ? 'Present ✓' : 'Missing ✗');
 await connectCloudinary()
 
 // Middlewares
