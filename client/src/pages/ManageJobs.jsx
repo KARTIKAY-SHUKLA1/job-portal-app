@@ -12,17 +12,27 @@ const ManageJobs = () => {
 
   const fetchCompanyJobs = async () => {
     try {
+      console.log('🔗 Fetching from:', `${backendUrl}/api/company/list-job`)
+      console.log('🔑 Token:', companyToken ? 'Present' : 'Missing')
+      
       const { data } = await axios.get(`${backendUrl}/api/company/list-job`, {
         headers: { token: companyToken },
       });
       
+      console.log('📦 Response data:', data)
+      
       if (data.success) {
-        setJobs(data.jobsData.reverse());
+        // FIXED: Changed from data.jobsData to data.jobs
+        const jobsList = data.jobs || []
+        setJobs(jobsList.reverse());
+        console.log('✅ Jobs loaded:', jobsList.length)
       } else {
         toast.error(data.message);
       }
     } catch (error) {
-      toast.error("Failed to fetch jobs. Please try again later.");
+      console.error('❌ Error fetching jobs:', error)
+      console.error('❌ Error response:', error.response?.data)
+      toast.error(error.response?.data?.message || "Failed to fetch jobs. Please try again later.");
     }
   };
 
@@ -40,7 +50,7 @@ const ManageJobs = () => {
         toast.error(data.message);
       }
     } catch (error) {
-      toast.error(error.message);
+      toast.error(error.response?.data?.message || error.message);
     }
   };
 
@@ -103,7 +113,7 @@ const ManageJobs = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-purple-100 text-sm font-medium mb-1">Total Applicants</p>
-              <p className="text-3xl font-bold">{jobs.reduce((sum, job) => sum + job.applicants, 0)}</p>
+              <p className="text-3xl font-bold">{jobs.reduce((sum, job) => sum + (job.applicants || 0), 0)}</p>
             </div>
             <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -154,7 +164,7 @@ const ManageJobs = () => {
                     </td>
                     <td className="py-4 px-6 text-center">
                       <span className="inline-flex items-center justify-center w-10 h-10 bg-blue-100 text-blue-700 rounded-lg font-bold">
-                        {job.applicants}
+                        {job.applicants || 0}
                       </span>
                     </td>
                     <td className="py-4 px-6 text-center">

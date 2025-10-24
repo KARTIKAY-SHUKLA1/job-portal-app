@@ -1,5 +1,4 @@
 import React, { createContext, useEffect, useState } from "react";
-// import { jobsData } from "../assets/assets";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useAuth, useUser } from "@clerk/clerk-react";
@@ -8,7 +7,7 @@ export const AppContext = createContext();
 
 export const AppContextProvider = (props) => {
     const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000'
-console.log('🔗 Backend URL:', backendUrl) // Add this
+    console.log('🔗 Backend URL:', backendUrl)
 
     const { user } = useUser()
     const {getToken} = useAuth()
@@ -31,6 +30,9 @@ console.log('🔗 Backend URL:', backendUrl) // Add this
     const [userData,setUserData] = useState(null)
 
     const [userApplications,setUserApplications] = useState([])
+
+    // ADD THIS NEW STATE
+    const [companyJobs, setCompanyJobs] = useState([])
 
 
 
@@ -72,31 +74,55 @@ console.log('🔗 Backend URL:', backendUrl) // Add this
         }
     }
 
-    // Function to fetch user data
-const fetchUserData = async () => {
-    try {
-        const token = await getToken();
-        
-        console.log('🔑 Token:', token ? 'Present' : 'Missing')
-        console.log('🌐 Calling:', backendUrl + '/api/users/user')
+    // ADD THIS NEW FUNCTION - Fetch Company Posted Jobs
+    const fetchCompanyJobs = async () => {
+        try {
+            console.log('🔗 Backend URL:', backendUrl)
+            console.log('🔑 Company Token:', companyToken ? 'Present' : 'Missing')
+            
+            const {data} = await axios.get(backendUrl+'/api/company/list-job', {
+                headers: { token: companyToken }
+            })
 
-        const {data} = await axios.get(backendUrl+'/api/users/user',
-            {headers:{Authorization:`Bearer ${token}`}}
-        )
-
-        if (data.success) {
-            setUserData(data.user)
-            console.log('✅ User data fetched successfully')
+            if (data.success) {
+                setCompanyJobs(data.jobs || [])
+                console.log('✅ Company jobs fetched:', data.jobs)
+            } else {
+                toast.error(data.message)
+            }
+            
+        } catch (error) {
+            console.error('❌ Error fetching company jobs:', error)
+            toast.error('Failed to fetch jobs. Please try again later.')
         }
-        else{
-            toast.error(data.message)
-        }
-    } catch (error) {
-        console.error('❌ fetchUserData error:', error)
-        console.error('❌ Error response:', error.response)
-        toast.error(error.message)
     }
-}
+
+    // Function to fetch user data
+    const fetchUserData = async () => {
+        try {
+            const token = await getToken();
+            
+            console.log('🔑 Token:', token ? 'Present' : 'Missing')
+            console.log('🌐 Calling:', backendUrl + '/api/users/user')
+
+            const {data} = await axios.get(backendUrl+'/api/users/user',
+                {headers:{Authorization:`Bearer ${token}`}}
+            )
+
+            if (data.success) {
+                setUserData(data.user)
+                console.log('✅ User data fetched successfully')
+            }
+            else{
+                toast.error(data.message)
+            }
+        } catch (error) {
+            console.error('❌ fetchUserData error:', error)
+            console.error('❌ Error response:', error.response)
+            toast.error(error.message)
+        }
+    }
+
     useEffect(() => {
         fetchJobs()
 
@@ -111,6 +137,7 @@ const fetchUserData = async () => {
     useEffect(() => {
         if (companyToken) {
             fetchCompanyData()
+            fetchCompanyJobs() // ADD THIS LINE
         }
     },[companyToken])
 
@@ -126,8 +153,10 @@ const fetchUserData = async () => {
         searchFilter,
         isSearched,
         setIsSearched,
-        jobs,setJobs,
-        showRecruiterLogin,setShowRecruiterLogin,
+        jobs,
+        setJobs,
+        showRecruiterLogin,
+        setShowRecruiterLogin,
         companyToken,
         setCompanyToken,
         companyData,
@@ -136,7 +165,10 @@ const fetchUserData = async () => {
         userData,
         setUserData,
         userApplications,
-        setUserApplications
+        setUserApplications,
+        companyJobs,          // ADD THIS
+        setCompanyJobs,       // ADD THIS
+        fetchCompanyJobs      // ADD THIS
     };
 
     return (
