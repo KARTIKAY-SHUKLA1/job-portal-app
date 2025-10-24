@@ -8,34 +8,60 @@ import JobApplication from "../models/JobApplication.js"
 // Register a new company
 export const registerCompany = async (req, res) => {
   try {
+    console.log('📝 === REGISTRATION REQUEST STARTED ===');
+    console.log('📦 Body:', req.body);
+    console.log('🖼️ File:', req.file);
+    
     const { name, email, password } = req.body;
     const imageFile = req.file;
 
     // Validate all required fields
     if (!name || !email || !password) {
+      console.log('❌ Missing required fields');
       return res.status(400).json({ success: false, message: "Name, email, and password are required" });
     }
 
     if (!imageFile) {
+      console.log('❌ No image file uploaded');
       return res.status(400).json({ success: false, message: "Company logo is required" });
     }
 
+    console.log('🔍 Checking if company exists with email:', email);
+    
     // Check if company already exists
     const companyExist = await Company.findOne({ email });
+    
     if (companyExist) {
+      console.log('❌ Company already exists');
       return res.status(400).json({
         success: false,
         message: "Company with this email already exists",
       });
     }
 
+    console.log('✅ Company does not exist, proceeding...');
+    console.log('🔐 Hashing password...');
+    
     // Hash password
     const salt = await bcrypt.genSalt(10);
     const hashPassword = await bcrypt.hash(password, salt);
-
+    
+    console.log('✅ Password hashed successfully');
+    console.log('☁️ Uploading to Cloudinary...');
+    console.log('📂 File path:', imageFile.path);
+    console.log('📂 File mimetype:', imageFile.mimetype);
+    console.log('📂 File size:', imageFile.size);
+    
     // Upload image to Cloudinary
-    const imageUpload = await cloudinary.uploader.upload(imageFile.path);
-
+    const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
+      folder: 'job-portal/companies',
+      resource_type: 'auto'
+    });
+    
+    console.log('✅ Cloudinary upload successful');
+    console.log('🖼️ Image URL:', imageUpload.secure_url);
+    console.log('💾 Creating company in database...');
+    
     // Create company
     const company = await Company.create({
       name,
@@ -43,9 +69,16 @@ export const registerCompany = async (req, res) => {
       password: hashPassword,
       image: imageUpload.secure_url,
     });
-
+    
+    console.log('✅ Company created successfully');
+    console.log('🆔 Company ID:', company._id);
+    console.log('🔑 Generating token...');
+    
     // Generate token
     const token = generateToken(company._id);
+    
+    console.log('✅ Token generated');
+    console.log('📤 Sending success response');
 
     res.status(201).json({
       success: true,
@@ -57,8 +90,16 @@ export const registerCompany = async (req, res) => {
       },
       token,
     });
+    
+    console.log('✅ === REGISTRATION COMPLETED SUCCESSFULLY ===');
   } catch (error) {
-    console.error('Register Company Error:', error);
+    console.error('❌❌❌ REGISTRATION ERROR ❌❌❌');
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    console.error('Full error object:', error);
+    console.error('❌❌❌ END ERROR ❌❌❌');
+    
     res.status(500).json({ success: false, message: error.message });
   }
 };
