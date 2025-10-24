@@ -17,64 +17,93 @@ const RecruiterLogin = () => {
   const { setShowRecruiterLogin, backendUrl, setCompanyToken, setCompanyData } = useContext(AppContext);
 
   const onSubmitHandler = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  // If Sign Up and haven't submitted text data yet, move to image upload step
-  if (state === 'Sign Up' && !isTextDataSubmited) {
-    // Validate text fields before moving to image upload
-    if (!name || !email || !password) {
-      toast.error('Please fill in all fields');
-      return;
-    }
-    return setIsDataSubmited(true);
-  }
-
-  try {
-    if (state === "Login") {
-      const { data } = await axios.post(backendUrl + '/api/company/login', { email, password });
-
-      if (data.success) {
-        setCompanyData(data.company);
-        setCompanyToken(data.token);
-        localStorage.setItem('companyToken', data.token);
-        setShowRecruiterLogin(false);
-        navigate('/dashboard');
-        toast.success('Login successful!');
-      } else {
-        toast.error(data.message);
-      }
-    } else {
-      // Sign Up - Check if image is uploaded
-      if (!image) {
-        toast.error('Please upload your company logo');
+    // If Sign Up and haven't submitted text data yet, move to image upload step
+    if (state === 'Sign Up' && !isTextDataSubmited) {
+      // Validate text fields before moving to image upload
+      if (!name || !email || !password) {
+        toast.error('Please fill in all fields');
         return;
       }
-
-      const formData = new FormData();
-      formData.append('name', name);
-      formData.append('password', password);
-      formData.append('email', email);
-      formData.append('image', image);
-
-      console.log('📤 Registering company:', name);
-      const { data } = await axios.post(backendUrl + '/api/company/register', formData);
-
-      if (data.success) {
-        setCompanyData(data.company);
-        setCompanyToken(data.token);
-        localStorage.setItem('companyToken', data.token);
-        setShowRecruiterLogin(false);
-        navigate('/dashboard');
-        toast.success('Account created successfully!');
-      } else {
-        toast.error(data.message);
-      }
+      return setIsDataSubmited(true);
     }
-  } catch (error) {
-    console.error('❌ Error:', error);
-    toast.error(error.response?.data?.message || error.message);
-  }
-};
+
+    try {
+      if (state === "Login") {
+        const loginUrl = `${backendUrl}/api/company/login`;
+        console.log('🔑 Login URL:', loginUrl);
+        console.log('📧 Email:', email);
+        
+        const { data } = await axios.post(loginUrl, { email, password });
+
+        if (data.success) {
+          setCompanyData(data.company);
+          setCompanyToken(data.token);
+          localStorage.setItem('companyToken', data.token);
+          setShowRecruiterLogin(false);
+          navigate('/dashboard');
+          toast.success('Login successful!');
+        } else {
+          toast.error(data.message);
+        }
+      } else {
+        // Sign Up - Check if image is uploaded
+        if (!image) {
+          toast.error('Please upload your company logo');
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append('name', name);
+        formData.append('password', password);
+        formData.append('email', email);
+        formData.append('image', image);
+
+        const registerUrl = `${backendUrl}/api/company/register`;
+        
+        console.log('=== REGISTRATION DEBUG ===');
+        console.log('🌐 Backend URL from context:', backendUrl);
+        console.log('🔗 Full Registration URL:', registerUrl);
+        console.log('📦 FormData contents:', {
+          name: formData.get('name'),
+          email: formData.get('email'),
+          password: formData.get('password') ? '***' : 'missing',
+          image: formData.get('image') ? `${formData.get('image').name} (${formData.get('image').size} bytes)` : 'missing'
+        });
+        console.log('========================');
+
+        const { data } = await axios.post(registerUrl, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+
+        console.log('✅ Response received:', data);
+
+        if (data.success) {
+          setCompanyData(data.company);
+          setCompanyToken(data.token);
+          localStorage.setItem('companyToken', data.token);
+          setShowRecruiterLogin(false);
+          navigate('/dashboard');
+          toast.success('Account created successfully!');
+        } else {
+          toast.error(data.message);
+        }
+      }
+    } catch (error) {
+      console.error('=== ERROR DEBUG ===');
+      console.error('❌ Error object:', error);
+      console.error('❌ Error message:', error.message);
+      console.error('❌ Error response:', error.response);
+      console.error('❌ Error config:', error.config);
+      console.error('==================');
+      
+      toast.error(error.response?.data?.message || error.message);
+    }
+  };
+
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => {
