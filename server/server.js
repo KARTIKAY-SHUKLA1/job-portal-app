@@ -41,6 +41,14 @@ app.use(cors({
 app.use(express.json())
 app.use(clerkMiddleware())
 
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "OK",
+    uptime: process.uptime(),
+    message: "DevLinkr backend healthy"
+  });
+});
+
 // Routes
 app.get('/',(req,res)=> res.send("API WORKING"))
 app.get("/debug-sentry", function mainHandler(req, res) {
