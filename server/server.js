@@ -37,17 +37,21 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'token']
 }));
 
+
 // Middlewares
 app.use(express.json())
-app.use(clerkMiddleware())
 
+// 🔥 HEALTH CHECK (MUST BE BEFORE AUTH)
 app.get("/health", (req, res) => {
   res.status(200).json({
     status: "OK",
     uptime: process.uptime(),
-    message: "DevLinkr backend healthy"
+    message: "job portal backend healthy"
   });
 });
+
+// 🔐 Auth middleware (AFTER health)
+app.use(clerkMiddleware())
 
 // Routes
 app.get('/',(req,res)=> res.send("API WORKING"))
